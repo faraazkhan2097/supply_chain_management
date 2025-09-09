@@ -4,7 +4,6 @@ package com.scm.supplychainmanagement.service;
 import com.scm.supplychainmanagement.Respository.SupplierRepository;
 import com.scm.supplychainmanagement.entities.Supplier;
 import com.scm.supplychainmanagement.exception.ResourceNotFoundException;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
