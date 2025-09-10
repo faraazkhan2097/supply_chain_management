@@ -10,19 +10,22 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @NoArgsConstructor
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@AllArgsConstructor
 public class Shipment {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     private Long id;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
-    @ToString.Exclude
+    @JoinColumn(name = "order_id", unique = true)
     private Order order;
 
-    private LocalDate shipmentDate;
-    private LocalDate estimatedArrivalDate;
-    private LocalDate actualArrivalDate;
+    private String carrier;
+    private String trackingNumber;
+    private LocalDate shippedDate;
+    private LocalDate estimatedDeliveryDate;
+    private LocalDate actualDeliveryDate;
+
+    @Enumerated(EnumType.STRING)
+    private ShipmentStatus status;
 }
