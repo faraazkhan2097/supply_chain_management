@@ -8,7 +8,6 @@ import com.scm.supplychainmanagement.entities.Shipment;
 import com.scm.supplychainmanagement.entities.ShipmentStatus;
 import com.scm.supplychainmanagement.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
