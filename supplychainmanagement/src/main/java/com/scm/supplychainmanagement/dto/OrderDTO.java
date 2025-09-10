@@ -16,4 +16,5 @@ public class OrderDTO {
     private String customerName;
     private LocalDate orderDate;
     private List<OrderItemDTO> orderItemsDto;
+    private ShipmentDTO shipmentDto;
 }

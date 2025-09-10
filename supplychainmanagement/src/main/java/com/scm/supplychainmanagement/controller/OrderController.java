@@ -15,6 +15,12 @@ import java.util.List;
 public class OrderController {
     private final OrderService _orderService;
 
+    @PostMapping("/finalize")
+    public ResponseEntity<OrderDTO> finalizeOrder(@RequestBody OrderDTO orderDto){
+        OrderDTO finalizeOrder = _orderService.finalizeOrder(orderDto);
+        return ResponseEntity.ok(finalizeOrder);
+    }
+
     @GetMapping
     public ResponseEntity<List<OrderDTO>> getAllOrders(){
         return ResponseEntity.ok(_orderService.getAllOrders());

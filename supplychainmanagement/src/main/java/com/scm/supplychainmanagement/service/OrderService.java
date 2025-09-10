@@ -5,6 +5,7 @@ import com.scm.supplychainmanagement.Respository.OrderRepository;
 import com.scm.supplychainmanagement.Respository.ProductRepository;
 import com.scm.supplychainmanagement.dto.OrderDTO;
 import com.scm.supplychainmanagement.dto.OrderItemDTO;
+import com.scm.supplychainmanagement.dto.ShipmentDTO;
 import com.scm.supplychainmanagement.entities.Customer;
 import com.scm.supplychainmanagement.entities.Order;
 import com.scm.supplychainmanagement.entities.OrderItem;
@@ -25,6 +26,56 @@ public class OrderService {
     private final OrderRepository _orderRepository;
     private final CustomerRepository _customerRepository;
     private final ProductRepository _productRepository;
+    private final InventoryService _inventoryService;
+    private final ShipmentService _shipmentService;
+    private final NotificationService _notificationService;
+
+
+    @Transactional
+    public OrderDTO finalizeOrder(OrderDTO orderDto){
+        Customer customer = _customerRepository.findById(orderDto.getCustomerId())
+                .orElseThrow(() -> new ResourceNotFoundException("Customer not found"));
+
+        Order initialOrder = new Order();
+        initialOrder.setCustomer(customer);
+        initialOrder.setOrderDate(orderDto.getOrderDate());
+
+        final Order savedOrder = _orderRepository.save(initialOrder);
+
+        List<OrderItem> orderItems = orderDto.getOrderItemsDto().stream()
+                .map(orderItemDto -> {
+                    Product product = _productRepository.findById(orderItemDto.getProductId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Product not found"));
+
+                    //Deduct inventory before creating the order item
+                    _inventoryService.reduceInventory(product.getId(), orderItemDto.getQuantityOrdered());
+
+                    OrderItem orderItem = new OrderItem();
+                    orderItem.setOrder(savedOrder);
+                    orderItem.setProduct(product);
+                    orderItem.setQuantityOrdered(orderItemDto.getQuantityOrdered());
+                    orderItem.setUnitPrice(product.getUnitPrice());
+                    BigDecimal totalPrice = product.getUnitPrice()
+                            .multiply(BigDecimal.valueOf(orderItemDto.getQuantityOrdered()));
+                    orderItem.setTotalPrice(totalPrice);
+                    return orderItem;
+                }).collect(Collectors.toList());
+        savedOrder.setOrderItems(orderItems);
+        _orderRepository.save(savedOrder);
+
+        //Create shipment once the order is finalized
+        ShipmentDTO shipmentDto = _shipmentService.createShipment(
+                savedOrder.getId(),
+                "Fedex",
+                null,
+                LocalDate.now().plusDays(5)
+        );
+
+        // optionally notify customer by email/sms
+        _notificationService.notifyShipmentCreated(savedOrder.getCustomer(), shipmentDto);
+
+        return convertToDTO(savedOrder);
+    }
 
     public List<OrderDTO> getAllOrders(){
         return _orderRepository.findAll().stream()
@@ -107,7 +158,7 @@ public class OrderService {
         List<OrderItemDTO> orderItemDtos = order.getOrderItems().stream().map(item -> {
             OrderItemDTO itemDto = new OrderItemDTO();
             itemDto.setId(item.getId());
-            itemDto.setProductId(item.getId());
+            itemDto.setProductId(item.getProduct().getId());
             itemDto.setProductName(item.getProduct().getProductName());
             itemDto.setQuantityOrdered(item.getQuantityOrdered());
             itemDto.setUnitPrice(item.getUnitPrice());
